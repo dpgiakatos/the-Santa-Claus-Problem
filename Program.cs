@@ -10,21 +10,15 @@ namespace the_Santa_Claus_Problem
         private static Semaphore santa;
         private static Semaphore butler;
 
-        /*private static long elfCounter = 0;
+        private static long elfCounter = 0;
         private static long reindeerCounter = 0;
 
         private static int elfReady = 0;
-        private static int reindeerReady = 0;*/
-
-        private static volatile int elfCounter = 0;
-        private static volatile int reindeerCounter = 0;
-
-        private static volatile bool elfReady = false;
-        private static volatile bool reindeerReady = false;
+        private static int reindeerReady = 0;
 
         static void Main(string[] args)
         {
-            elf = new Semaphore(0, 10);
+            elf = new Semaphore(0, 3);
             reindeer = new Semaphore(0, 9);
             santa = new Semaphore(0, 1);
             butler = new Semaphore(0, 1);
@@ -52,11 +46,9 @@ namespace the_Santa_Claus_Problem
             while (true)
             {
                 Console.WriteLine("Elf {0}: I am waiting in elf's team.", num);
-                //Interlocked.Increment(ref elfCounter);
-                elfCounter++;
+                Interlocked.Increment(ref elfCounter);
                 elf.WaitOne();
                 Console.WriteLine("Elf {0}: I am going to work.", num);
-                //Thread.Sleep(250);
             }
         }
 
@@ -65,11 +57,9 @@ namespace the_Santa_Claus_Problem
             while (true)
             {
                 Console.WriteLine("Reindeer {0}: I am waiting in reindeer's team.", num);
-                //Interlocked.Increment(ref reindeerCounter);
-                reindeerCounter++;
+                Interlocked.Increment(ref reindeerCounter);
                 reindeer.WaitOne();
                 Console.WriteLine("Reindeer {0}: I am free.", num);
-                //Thread.Sleep(750);
             }
         }
 
@@ -78,29 +68,22 @@ namespace the_Santa_Claus_Problem
             while (true)
             {
                 Console.WriteLine("Santa: I am going to sleep. Butler, you are in charge.");
-                butler.Release();
                 santa.WaitOne();
                 Console.WriteLine("Santa: I am awake.");
-                //if (Interlocked.Exchange(ref elfReady, 0) == 1)
-                if (elfReady)
+                if (Interlocked.Exchange(ref elfReady, 0) == 1)
                 {
                     Console.WriteLine("Santa: The meeting with the elf's team is starting.");
-                    //Interlocked.Exchange(ref elfCounter, Interlocked.Read(ref elfCounter) - 3);
-                    elfReady = false;
-                    elfCounter -= 3;
+                    Interlocked.Add(ref elfCounter, -3);
                     elf.Release(3);
-                }
-                //else if (Interlocked.Exchange(ref reindeerReady, 0) == 1)
-                else if (reindeerReady)
+                                    }
+                else if (Interlocked.Exchange(ref reindeerReady, 0) == 1)
                 {
                     Console.WriteLine("Santa: I am going out with the reindeer's team.");
-                    //Interlocked.Exchange(ref reindeerCounter, 0);
-                    reindeerReady = false;
-                    reindeerCounter = 0;
+                    Interlocked.Exchange(ref reindeerCounter, 0);
                     reindeer.Release(9);
                 }
                 Console.WriteLine("Santa: I just finished.");
-                //Thread.Sleep(500);
+                butler.Release();
             }
         }
 
@@ -108,25 +91,20 @@ namespace the_Santa_Claus_Problem
         {
             while (true)
             {
-                //if (Interlocked.Read(ref reindeerCounter) == 9)
-                if (reindeerCounter == 9)
+                if (Interlocked.Read(ref reindeerCounter) == 9)
                 {
                     Console.WriteLine("Butler: The reindeer's team is ready. I will go to awake santa.");
-                    //Interlocked.Exchange(ref reindeerReady, 1);
-                    reindeerReady = true;
+                    Interlocked.Exchange(ref reindeerReady, 1);
                     santa.Release();
                     butler.WaitOne();
-                }
-                //else if (Interlocked.Read(ref elfCounter) == 3)
-                else if (elfCounter == 3)
+                                    }
+                else if (Interlocked.Read(ref elfCounter) >= 3)
                 {
                     Console.WriteLine("Butler: The elf's team is ready. I will go to awake santa.");
-                    //Interlocked.Exchange(ref elfReady, 1);
-                    elfReady = true;
+                    Interlocked.Exchange(ref elfReady, 1);
                     santa.Release();
                     butler.WaitOne();
                 }
-                //Thread.Sleep(1);
             }
         }
     }

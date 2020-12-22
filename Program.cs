@@ -8,26 +8,20 @@ namespace the_Santa_Claus_Problem
         private static Semaphore elf;
         private static Semaphore reindeer;
         private static Semaphore santa;
-        private static Semaphore butler;
 
         private static long elfCounter = 0;
         private static long reindeerCounter = 0;
 
-        private static int elfReady = 0;
-        private static int reindeerReady = 0;
 
         static void Main(string[] args)
         {
             elf = new Semaphore(0, 3);
             reindeer = new Semaphore(0, 9);
-            santa = new Semaphore(0, 1);
-            butler = new Semaphore(0, 1);
+            santa = new Semaphore(0, 2);
 
             Thread santaThread = new Thread(new ParameterizedThreadStart(Santa));
             santaThread.Start();
 
-            Thread butlerThread = new Thread(new ParameterizedThreadStart(Butler));
-            butlerThread.Start();
 
             for (int i = 0; i < 10; i++)
             {
@@ -47,8 +41,13 @@ namespace the_Santa_Claus_Problem
             {
                 Console.WriteLine("Elf {0}: I am waiting in elf's team.", num);
                 Interlocked.Increment(ref elfCounter);
+                if (Interlocked.Read(ref elfCounter) == 3)
+                {
+                    santa.Release();
+                }
                 elf.WaitOne();
                 Console.WriteLine("Elf {0}: I am going to work.", num);
+                Thread.Sleep(250);
             }
         }
 
@@ -58,8 +57,13 @@ namespace the_Santa_Claus_Problem
             {
                 Console.WriteLine("Reindeer {0}: I am waiting in reindeer's team.", num);
                 Interlocked.Increment(ref reindeerCounter);
+                if (Interlocked.Read(ref reindeerCounter) == 9)
+                {
+                    santa.Release();
+                }
                 reindeer.WaitOne();
                 Console.WriteLine("Reindeer {0}: I am free.", num);
+                Thread.Sleep(500);
             }
         }
 
@@ -67,44 +71,22 @@ namespace the_Santa_Claus_Problem
         {
             while (true)
             {
-                Console.WriteLine("Santa: I am going to sleep. Butler, you are in charge.");
+                Console.WriteLine("Santa: I am going to sleep.");
                 santa.WaitOne();
                 Console.WriteLine("Santa: I am awake.");
-                if (Interlocked.Exchange(ref elfReady, 0) == 1)
-                {
-                    Console.WriteLine("Santa: The meeting with the elf's team is starting.");
-                    Interlocked.Add(ref elfCounter, -3);
-                    elf.Release(3);
-                                    }
-                else if (Interlocked.Exchange(ref reindeerReady, 0) == 1)
+                if (Interlocked.Read(ref reindeerCounter) == 9)
                 {
                     Console.WriteLine("Santa: I am going out with the reindeer's team.");
                     Interlocked.Exchange(ref reindeerCounter, 0);
                     reindeer.Release(9);
                 }
-                Console.WriteLine("Santa: I just finished.");
-                butler.Release();
-            }
-        }
-
-        private static void Butler(object num)
-        {
-            while (true)
-            {
-                if (Interlocked.Read(ref reindeerCounter) == 9)
-                {
-                    Console.WriteLine("Butler: The reindeer's team is ready. I will go to awake santa.");
-                    Interlocked.Exchange(ref reindeerReady, 1);
-                    santa.Release();
-                    butler.WaitOne();
-                                    }
                 else if (Interlocked.Read(ref elfCounter) >= 3)
                 {
-                    Console.WriteLine("Butler: The elf's team is ready. I will go to awake santa.");
-                    Interlocked.Exchange(ref elfReady, 1);
-                    santa.Release();
-                    butler.WaitOne();
+                    Console.WriteLine("Santa: The meeting with the elf's team is starting.");
+                    Interlocked.Add(ref elfCounter, -3);
+                    elf.Release(3);
                 }
+                Console.WriteLine("Santa: I just finished.");
             }
         }
     }

@@ -47,12 +47,15 @@ namespace the_Santa_Claus_Problem
                 elfBuffer.WaitOne();
                 Console.WriteLine("Elf {0}: I am waiting in elf's team.", num);
                 Interlocked.Increment(ref elfCounter);
-                if (Interlocked.Read(ref elfCounter) >= 3)
+                if (Interlocked.Read(ref elfCounter) == 3)
                 {
                     buffer.WaitOne();
                     santa.Release();
                 }
-                elfBuffer.Release();
+                else
+                {
+                    elfBuffer.Release();
+                }
                 elf.WaitOne();
                 Console.WriteLine("Elf {0}: I am going to work.", num);
                 Thread.Sleep(250);
@@ -89,11 +92,12 @@ namespace the_Santa_Claus_Problem
                     Interlocked.Exchange(ref reindeerCounter, 0);
                     reindeer.Release(9);
                 }
-                else if (Interlocked.Read(ref elfCounter) >= 3)
+                else if (Interlocked.Read(ref elfCounter) == 3)
                 {
                     Console.WriteLine("Santa: The meeting with the elf's team is starting.");
                     Interlocked.Add(ref elfCounter, -3);
                     elf.Release(3);
+                    elfBuffer.Release();
                 }
                 Console.WriteLine("Santa: I just finished.");
                 buffer.Release();

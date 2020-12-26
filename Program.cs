@@ -8,6 +8,9 @@ namespace the_Santa_Claus_Problem
         private static Semaphore elf;
         private static Semaphore reindeer;
         private static Semaphore santa;
+        
+        private static Semaphore buffer;
+        private static Semaphore elfBuffer;
 
         private static long elfCounter = 0;
         private static long reindeerCounter = 0;
@@ -17,11 +20,13 @@ namespace the_Santa_Claus_Problem
         {
             elf = new Semaphore(0, 3);
             reindeer = new Semaphore(0, 9);
-            santa = new Semaphore(0, 2);
+            santa = new Semaphore(0, 1);
+            
+            buffer = new Semaphore(1, 1);
+            elfBuffer = new Semaphore(1, 1);
 
             Thread santaThread = new Thread(new ParameterizedThreadStart(Santa));
             santaThread.Start();
-
 
             for (int i = 0; i < 10; i++)
             {
@@ -39,12 +44,15 @@ namespace the_Santa_Claus_Problem
         {
             while (true)
             {
+                elfBuffer.WaitOne();
                 Console.WriteLine("Elf {0}: I am waiting in elf's team.", num);
                 Interlocked.Increment(ref elfCounter);
-                if (Interlocked.Read(ref elfCounter) == 3)
+                if (Interlocked.Read(ref elfCounter) >= 3)
                 {
+                    buffer.WaitOne();
                     santa.Release();
                 }
+                elfBuffer.Release();
                 elf.WaitOne();
                 Console.WriteLine("Elf {0}: I am going to work.", num);
                 Thread.Sleep(250);
@@ -59,6 +67,7 @@ namespace the_Santa_Claus_Problem
                 Interlocked.Increment(ref reindeerCounter);
                 if (Interlocked.Read(ref reindeerCounter) == 9)
                 {
+                    buffer.WaitOne();
                     santa.Release();
                 }
                 reindeer.WaitOne();
@@ -87,6 +96,7 @@ namespace the_Santa_Claus_Problem
                     elf.Release(3);
                 }
                 Console.WriteLine("Santa: I just finished.");
+                buffer.Release();
             }
         }
     }

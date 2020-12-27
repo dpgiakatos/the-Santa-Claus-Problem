@@ -9,8 +9,7 @@ namespace the_Santa_Claus_Problem
         private static Semaphore reindeer;
         private static Semaphore santa;
         
-        private static Semaphore buffer;
-        private static Semaphore elfBuffer;
+        private static Semaphore elfLock;
 
         private static long elfCounter = 0;
         private static long reindeerCounter = 0;
@@ -22,8 +21,7 @@ namespace the_Santa_Claus_Problem
             reindeer = new Semaphore(0, 9);
             santa = new Semaphore(0, 1);
             
-            buffer = new Semaphore(1, 1);
-            elfBuffer = new Semaphore(1, 1);
+            elfLock = new Semaphore(1, 1);
 
             Thread santaThread = new Thread(new ParameterizedThreadStart(Santa));
             santaThread.Start();
@@ -44,17 +42,16 @@ namespace the_Santa_Claus_Problem
         {
             while (true)
             {
-                elfBuffer.WaitOne();
+                elfLock.WaitOne();
                 Console.WriteLine("Elf {0}: I am waiting in elf's team.", num);
                 Interlocked.Increment(ref elfCounter);
                 if (Interlocked.Read(ref elfCounter) == 3)
                 {
-                    buffer.WaitOne();
                     santa.Release();
                 }
                 else
                 {
-                    elfBuffer.Release();
+                    elfLock.Release();
                 }
                 elf.WaitOne();
                 Console.WriteLine("Elf {0}: I am going to work.", num);
@@ -70,7 +67,6 @@ namespace the_Santa_Claus_Problem
                 Interlocked.Increment(ref reindeerCounter);
                 if (Interlocked.Read(ref reindeerCounter) == 9)
                 {
-                    buffer.WaitOne();
                     santa.Release();
                 }
                 reindeer.WaitOne();
@@ -97,10 +93,9 @@ namespace the_Santa_Claus_Problem
                     Console.WriteLine("Santa: The meeting with the elf's team is starting.");
                     Interlocked.Add(ref elfCounter, -3);
                     elf.Release(3);
-                    elfBuffer.Release();
+                    elfLock.Release();
                 }
                 Console.WriteLine("Santa: I just finished.");
-                buffer.Release();
             }
         }
     }

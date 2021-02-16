@@ -9,7 +9,7 @@ namespace the_Santa_Claus_Problem
         private static Semaphore reindeer;
         private static Semaphore santa;
         
-        private static Semaphore elfLock;
+        private static Semaphore elfLock; // Binary semaphore
 
         private static long elfCounter = 0;
         private static long reindeerCounter = 0;
@@ -38,11 +38,15 @@ namespace the_Santa_Claus_Problem
             }
         }
 
+        /// <summary>
+        /// Elf proccess
+        /// </summary>
+        /// <param name="num"></param>
         private static void Elf(object num)
         {
             while (true)
             {
-                elfLock.WaitOne();
+                elfLock.WaitOne(); // One elf enters the room per time. Starvation problem solved.
                 Console.WriteLine("Elf {0}: I am waiting in elf's team.", num);
                 Interlocked.Increment(ref elfCounter);
                 if (Interlocked.Read(ref elfCounter) == 3)
@@ -59,6 +63,10 @@ namespace the_Santa_Claus_Problem
             }
         }
 
+        /// <summary>
+        /// Reindeer proccess
+        /// </summary>
+        /// <param name="num"></param>
         private static void Reindeer(object num)
         {
             while (true)
@@ -75,6 +83,10 @@ namespace the_Santa_Claus_Problem
             }
         }
 
+        /// <summary>
+        /// Santa proccess
+        /// </summary>
+        /// <param name="num"></param>
         private static void Santa(object num)
         {
             while (true)
